@@ -8,6 +8,7 @@
 #include <math.h>
 
 #include "DEvent.h"
+#include "Intersections.h"
 
 using namespace std;
 
@@ -156,7 +157,10 @@ public:
 		int childCount = 2;
 		int a = 0;
 		int b = 0;
+		int c = 0;
+		int d = 0;
 		int i = 0;
+		bool hit = false;
 		if(mX < 30 && mY < 30)
 		{
 			extra = true;
@@ -201,6 +205,41 @@ public:
 			extra = false;
 		}
 		
+		else if(mX < 30 && mY < 90 && mY > 60)
+		{
+			for(a = 0; a < point.size(); a++)
+			{
+				for(b = 0; b < point[a].children.size(); b++)
+				{
+					for(c = 0; c < point.size(); c++)
+					{
+						if(c == a)
+						{
+							continue;
+						}
+						
+						else
+						{
+							for(d = 0; d < point[c].children.size(); d++)
+							{
+								if(checkIntersection(point[a].x, point[a].children[b]->x, point[c].x, point[c].children[d]->x, point[a].y, point[a].children[b]->y, point[c].y, point[c].children[d]->y))
+								{
+									point[c].children.erase(point[c].children.begin() + d);
+									hit = true;
+									continue;
+								}
+							}
+						}
+						if(hit)
+						{
+							hit = false;
+							continue;
+						}
+					}
+				}
+			}
+		}
+		
 		else
 		{
 			pointType var;
@@ -237,6 +276,14 @@ public:
 			glVertex2f(30, 30);
 			glVertex2f(30, 60);
 			glVertex2f(0, 60);
+		glEnd();
+		
+		glColor3f(1, 0.5, 0);
+		glBegin(GL_QUADS);
+			glVertex2f(0, 60);
+			glVertex2f(30, 60);
+			glVertex2f(30, 90);
+			glVertex2f(0, 90);
 		glEnd();
 		
 		glColor3f(1, 0, 0);
