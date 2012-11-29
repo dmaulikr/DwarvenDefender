@@ -1,0 +1,46 @@
+# depslib dependency file v1.0
+1352556115 source:c:\users\andrew\my programs\dwarfen defender\main.cpp
+	"DMain.h"
+
+1352573439 source:c:\users\andrew\my programs\dwarfen defender\dmain.cpp
+	"DMain.h"
+
+1352673259 c:\users\andrew\my programs\dwarfen defender\dmain.h
+	<SDL/SDL.h>
+	<GL/glu.h>
+	"DEvent.h"
+
+1352573439 source:c:\users\andrew\my programs\dwarfen defender\doncleanup.cpp
+	"DMain.h"
+
+1352660636 source:c:\users\andrew\my programs\dwarfen defender\donevent.cpp
+	"DMain.h"
+
+1352557966 source:c:\users\andrew\my programs\dwarfen defender\donloop.cpp
+	"DMain.h"
+
+1352557966 source:c:\users\andrew\my programs\dwarfen defender\donrender.cpp
+	"DMain.h"
+
+1352655953 source:c:\users\andrew\my programs\dwarfen defender\doninit.cpp
+	"DMain.h"
+
+1352660053 c:\users\andrew\my programs\dwarfen defender\devent.h
+	<SDL/SDL.h>
+
+1353364904 source:c:\users\andrew\my programs\dwarfendefender\dmain.cpp
+	"DMain.h"
+
+1354145961 c:\users\andrew\my programs\dwarfendefender\dmain.h
+	<SDL/SDL.h>
+	<GL/glu.h>
+	<vector>
+	<iostream>
+	<math.h>
+	"DEvent.h"
+	"Intersections.h"
+
+1353364540 c:\users\andrew\my programs\dwarfendefender\devent.h
+
+1354145732 c:\users\andrew\my programs\dwarfendefender\intersections.h
+

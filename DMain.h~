@@ -1,8 +1,6 @@
 #ifndef DMAIN_H_INCLUDED
 #define DMAIN_H_INCLUDED
 
-#define PI 3.14159265
-
 #include <SDL/SDL.h>
 #include <GL/glu.h>
 #include <vector>
@@ -10,13 +8,19 @@
 #include <math.h>
 
 #include "DEvent.h"
-#include "Intersections.h"
 
 using namespace std;
 
 class DMain : public DEvent
 {
 private:
+	
+	struct relatedPointsType
+	{
+		float length;
+		int pointLookup;
+	};
+	
 	struct wallPointsType
 	{
 		int x;
@@ -27,17 +31,12 @@ private:
 	{
 		int x;
 		int y;
-		vector<pointType*> children;
-		vector<pointType*> parent;
+		vector<relatedPointsType> relatedPoints;
 		vector<wallPointsType> wallPoints;
 	};
-
-	struct relatedPointsType
-	{
-		float length;
-		pointType* pointLookup;
-	};
-
+	//point[a].wallPoints.resize(3);
+	//point[a].wallPoints[b].x/y
+	
 	void bubbleSort(vector<pointType> &vec)
 	{
 		int i;
@@ -61,7 +60,7 @@ private:
 		}
 		return;
 	}
-
+	
 	void bubbleSort2(vector<relatedPointsType> &vec)
 	{
 		int i;
@@ -73,7 +72,7 @@ private:
 		{
 			swapMade = false;
 			for(j = 0; j < (length -1); j++)
-			{
+			{				
 				if(vec[j + 1].length < vec[j].length)
 				{
 					temp = vec[j];
@@ -85,40 +84,14 @@ private:
 		}
 		return;
 	}
-
-	//Uses a floor point and the data to another floor point to find an angle.
-	float CovertToAngle (pointType* center, int space, bool listP)
-	{
-	    float x, y;
-
-	    //True means it is comparing to a parent, false to a child.
-	    if (listP)
-	    {
-	        x = center->parent->x - center->x;
-	        y = center->parent->y - center->y;
-	    }
-	    else
-	    {
-	        x = center->children->x - center->x;
-	        y = center->children->y - center->y;
-	    }
-
-	    float angle = atan2 (x, y);
-
-	    //Moves the angle from [-PI,+PI] to [0,2PI). I think the notation is right.
-	    if (angle < 0) angle = angle + 2*PI;
-
-	    return angle = 0;
-	}
-
+	
 	bool running;
 	vector<pointType> point;
-	vector<relatedPointsType> relatedPoints;
 	bool extra;
   SDL_Surface* surfDisplay;
-
+	
 public:
-	int childCount;
+	
 	DMain();
 	int OnExecute();
 
@@ -135,10 +108,10 @@ public:
 		{
 			return false;
 		}
-
+        
 		info = SDL_GetVideoInfo();
 
-		if(!info)
+		if(!info) 
 		{
 			fprintf(stderr, "Video query failed: %s\n", SDL_GetError());
 		}
@@ -149,7 +122,7 @@ public:
     {
 			return false;
     }
-
+		
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
 		glOrtho(0, width, height, 0, 0, 1);
@@ -178,95 +151,43 @@ public:
 			running = false;
     }
   }
-
+  
   void OnLButtonDown(int mX, int mY)
 	{
-		int childCount = 2;
+		extra = true;
 		int a = 0;
 		int b = 0;
-		int c = 0;
-		int d = 0;
 		int i = 0;
-		bool hit = false;
 		if(mX < 30 && mY < 30)
 		{
-			extra = true;
 			bubbleSort(point);
-
-			for(a = 0; a < point.size(); a++)
+			
+			for(a = 0; a < point.size() ; a++)
 			{
-				childCount = 2;
-				relatedPoints.clear();
-				relatedPoints.resize(point.size() - (a + 1));
-
+				point[a].relatedPoints.resize(point.size() - (a + 1));
 				i = 0;
-				for(b = (a + 1); b < point.size(); b++)
+				for(b = a + 1; b < point.size(); b++)
 				{
-					relatedPoints[i].length = sqrt((pow(point[b].x - point[a].x, 2) + pow(point[b].y - point[a].y, 2)));
-					relatedPoints[i].pointLookup = &point[b];
+					point[a].relatedPoints[i].length = sqrt((pow(point[b].x - point[a].x, 2) + pow(point[b].y - point[a].y, 2)));
+					point[a].relatedPoints[i].pointLookup = b;
 					i++;
 				}
-
-				bubbleSort2(relatedPoints);
-				point[a].children.resize(childCount);
-
-				for(b = 0; b < point[a].children.size(); b++)
-				{
-					point[a].children[b] = relatedPoints[b].pointLookup;
-				}
 			}
-
+			
 			for(a = 0; a < point.size(); a++)
 			{
-				for(b = 0; b < point[a].children.size(); b++)
-				{
-					point[a].children[b]->parent.push_back(&point[a]);
-				}
+				bubbleSort2(point[a].relatedPoints);
 			}
+			
 			//calculate wall points.
 		}
-
+		
 		else if(mX < 30 && mY < 60 && mY > 30)
 		{
 			point.clear();
 			extra = false;
 		}
-
-		else if(mX < 30 && mY < 90 && mY > 60)
-		{
-			for(a = 0; a < point.size(); a++)
-			{
-				for(b = 0; b < point[a].children.size(); b++)
-				{
-					for(c = 0; c < point.size(); c++)
-					{
-						if(c == a)
-						{
-							continue;
-						}
-
-						else
-						{
-							for(d = 0; d < point[c].children.size(); d++)
-							{
-								if(checkIntersection(point[a].x, point[a].children[b]->x, point[c].x, point[c].children[d]->x, point[a].y, point[a].children[b]->y, point[c].y, point[c].children[d]->y))
-								{
-									point[c].children.erase(point[c].children.begin() + d);
-									hit = true;
-									continue;
-								}
-							}
-						}
-						if(hit)
-						{
-							hit = false;
-							continue;
-						}
-					}
-				}
-			}
-		}
-
+		
 		else
 		{
 			pointType var;
@@ -296,7 +217,7 @@ public:
 			glVertex2f(30, 30);
 			glVertex2f(0, 30);
 		glEnd();
-
+		
 		glColor3f(1, 0, 0);
 		glBegin(GL_QUADS);
 			glVertex2f(0, 30);
@@ -304,15 +225,7 @@ public:
 			glVertex2f(30, 60);
 			glVertex2f(0, 60);
 		glEnd();
-
-		glColor3f(1, 0.5, 0);
-		glBegin(GL_QUADS);
-			glVertex2f(0, 60);
-			glVertex2f(30, 60);
-			glVertex2f(30, 90);
-			glVertex2f(0, 90);
-		glEnd();
-
+		
 		glColor3f(1, 0, 0);
 		glPointSize(5);
 		for(i = 0; i < point.size(); i++)
@@ -322,20 +235,20 @@ public:
 			glEnd();
 		}
 		glPointSize(1);
-
+		
 		if(extra)
 		{
 			for(a = 0; a < point.size(); a++)
 			{
-				for(b = 0; b < point[a].children.size(); b++)
+				for(b = 0; b < point[a].relatedPoints.size() && b < 2; b++)
 				{
 					glBegin(GL_LINES);
 						glVertex2f(point[a].x, point[a].y);
-						glVertex2f(point[a].children[b]->x, point[a].children[b]->y);
+						glVertex2f(point[point[a].relatedPoints[b].pointLookup].x, point[point[a].relatedPoints[b].pointLookup].y);
 					glEnd();
 				}
 			}
-
+			
 			/*
 			glcolor3f(0, 1, 0);
 			glPointSize(2);
@@ -351,7 +264,7 @@ public:
 			glPointSize(1);
 			*/
 		}
-
+		
     SDL_GL_SwapBuffers();
 	}
 
