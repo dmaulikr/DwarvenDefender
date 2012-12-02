@@ -44,3 +44,19 @@
 
 1354145732 c:\users\andrew\my programs\dwarfendefender\intersections.h
 
+1353972023 source:c:\users\andrew\my programs\dwarvendefender\dmain.cpp
+	"DMain.h"
+
+1354477748 c:\users\andrew\my programs\dwarvendefender\dmain.h
+	<SDL/SDL.h>
+	<GL/glu.h>
+	<vector>
+	<iostream>
+	<math.h>
+	"DEvent.h"
+	"Intersections.h"
+
+1353972023 c:\users\andrew\my programs\dwarvendefender\devent.h
+
+1353972023 c:\users\andrew\my programs\dwarvendefender\intersections.h
+

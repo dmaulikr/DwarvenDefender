@@ -86,36 +86,119 @@ private:
 		return;
 	}
 
-	//Uses a floor point and the data to another floor point to find an angle.
-	float CovertToAngle (pointType* center, int space, bool listP)
+	bool running;
+	vector<pointType> point;
+	vector<relatedPointsType> relatedPoints;
+	bool extra;
+  SDL_Surface* surfDisplay;
+
+  	//Uses a floor point and the data to another floor point to find an angle.
+	float ConvertToAngle (pointType* center, int space, bool listP)
 	{
 	    float x, y;
 
 	    //True means it is comparing to a parent, false to a child.
 	    if (listP)
 	    {
-	        x = center->parent->x - center->x;
-	        y = center->parent->y - center->y;
+	        x = center->parent[space]->x - center->x;
+	        y = center->parent[space]->y - center->y;
 	    }
 	    else
 	    {
-	        x = center->children->x - center->x;
-	        y = center->children->y - center->y;
+	        x = center->children[space]->x - center->x;
+	        y = center->children[space]->y - center->y;
 	    }
 
 	    float angle = atan2 (x, y);
 
 	    //Moves the angle from [-PI,+PI] to [0,2PI). I think the notation is right.
-	    if (angle < 0) angle = angle + 2*PI;
+	    //if (angle < 0) angle = angle + 2*PI;
 
 	    return angle = 0;
 	}
 
-	bool running;
-	vector<pointType> point;
-	vector<relatedPointsType> relatedPoints;
-	bool extra;
-  SDL_Surface* surfDisplay;
+	//Moves a wall point based on an angle and distance.
+	void ConvertToCoordinates (wallPointsType* wall, float angle, float distance)
+	{
+	    //cos & x
+	    wall->x = wall->x + (cos(angle) * distance);
+	    //sin & y
+	    wall->y = wall->y + (sin(angle) * distance);
+	}
+
+	//Finds all the wall points around a floor point.
+	void IntersectionWalls (pointType* center)
+	{
+        //First the parent and child points are sorted by angle.
+        vector<relatedPointsType> relatedWalls;
+        relatedWalls.clear();
+        relatedWalls.resize(center->children.size() + center->parent.size());
+
+        for (unsigned int n = 0 ; n < center->parent.size() ; n++)
+        {
+            relatedWalls[n].pointLookup = center->parent[n];
+            relatedWalls[n].length = ConvertToAngle(center, n, true);
+        }
+
+        for (unsigned int n = 0 ; n < center->children.size() ; n++)
+        {
+            relatedWalls[n + center->parent.size()].pointLookup = center->children[n];
+            relatedWalls[n + center->parent.size()].length = ConvertToAngle(center, n, false);
+        }
+
+        bubbleSort2(relatedWalls);
+
+        int first = relatedWalls.size();
+        int second = 0;
+        //0 first close, 1 second close, 2 first far, 3 second far.
+        wallPointsType tempWallPoints [4];
+        float firstAngle;
+        float secondAngle;
+
+        //Now it finds the wall points, going counderclockwise.
+        for (unsigned int n = 0 ; n < relatedWalls.size() ; n++)
+        {
+            //The four tempWallPoints are set (placed on a floor point then sifted).
+            tempWallPoints[0].x = tempWallPoints[1].x = center->x;
+            tempWallPoints[0].y = tempWallPoints[1].y = center->y;
+            tempWallPoints[2].x = relatedWalls[first].pointLookup->x;
+            tempWallPoints[2].y = relatedWalls[first].pointLookup->y;
+            tempWallPoints[3].x = relatedWalls[second].pointLookup->x;
+            tempWallPoints[3].y = relatedWalls[second].pointLookup->y;
+
+            firstAngle = relatedWalls[first].length + PI/2;
+            secondAngle = relatedWalls[second].length - PI/2;
+
+            if (firstAngle > PI) firstAngle = firstAngle - 2*PI;
+            if (firstAngle < -PI) firstAngle = firstAngle + 2*PI;
+            if (secondAngle > PI) secondAngle = secondAngle - 2*PI;
+            if (secondAngle < -PI) secondAngle = secondAngle + 2*PI;
+
+            //The third value in ConvertToCoordinates {20} is the intersection's radius.
+            ConvertToCoordinates (&tempWallPoints[0], firstAngle, 20);
+            ConvertToCoordinates (&tempWallPoints[1], secondAngle, 20);
+            ConvertToCoordinates (&tempWallPoints[2], firstAngle, 20);
+            ConvertToCoordinates (&tempWallPoints[3], secondAngle, 20);
+
+            if (checkIntersection(tempWallPoints[0].x, tempWallPoints[1].x,
+                                   tempWallPoints[2].x, tempWallPoints[3].x,
+                                    tempWallPoints[0].y, tempWallPoints[1].y,
+                                     tempWallPoints[2].y, tempWallPoints[3].y))
+            {
+                //If there is an intersection it adds the intersection as a wall point.
+                //Note to self: make a FindIntersection() in Intersection.h.
+            }
+            else
+            {
+                //If there is no intersection it adds the two close wall points.
+                center->wallPoints.push_back (tempWallPoints[0]);
+                center->wallPoints.push_back (tempWallPoints[1]);
+            }
+
+            first = n;
+            second = n + 1;
+        }
+	}
 
 public:
 	int childCount;
@@ -223,7 +306,15 @@ public:
 					point[a].children[b]->parent.push_back(&point[a]);
 				}
 			}
-			//calculate wall points.
+
+			/*//Calculate wall points.
+            for (unsigned int n = 0 ; n < point.size() ; n++)
+            {
+                //A crash guard here.
+                if (point[n].parent.size() > 0 && point[n].children.size() > 0)
+                    IntersectionWalls(&point[n]);
+            }
+            */
 		}
 
 		else if(mX < 30 && mY < 60 && mY > 30)
@@ -336,20 +427,22 @@ public:
 				}
 			}
 
-			/*
-			glcolor3f(0, 1, 0);
+			glColor3f(0, 1, 0);
 			glPointSize(2);
 			for(a = 0; a < point.size(); a++)
 			{
-				for(b = 0; b < point[a].relatedPoints.size(); b++)
+				if (point[a].wallPoints.size() != 0)
 				{
-					glBegin(GL_POINTS);
-						glVertex2f(point[a].wallPoints[b].x, point[a].wallPoints[b].y);
-					glEnd();
+                    for(b = 0; b < point[a].wallPoints.size(); b++)
+                    {
+                        glBegin(GL_POINTS);
+                            glVertex2f(point[a].wallPoints[b].x, point[a].wallPoints[b].y);
+                        glEnd();
+                    }
 				}
 			}
+
 			glPointSize(1);
-			*/
 		}
 
     SDL_GL_SwapBuffers();
